@@ -1,7 +1,7 @@
 # TubeToMD — Architecture & Technical Design
 
 > **Last Updated:** May 2026
-> **Author:** Akshat Rauthan
+> **Author:** Kanika Sharma
 
 > ### Migration Notice (May 2026)
 > The LLM stack migrated from **Groq → NVIDIA NIM** (`build.nvidia.com`). All chat / notes / translation calls now use NIM's OpenAI-compatible endpoint. Image generation was added (FLUX.1-schnell, SD3-medium fallback). Whisper transcription is still served by Groq (separate concern, not migrated). Wherever this document still references "Groq" for LLM features, mentally substitute "NVIDIA NIM" — the architectural roles are identical, only the provider and model names changed (see §3 AI/ML and §6a). The new key manager (`NimKeyManager`) additionally tracks per-key *credit exhaustion* (NIM credits are lifetime, not refilled) and supports **fallback-model-before-rotate**, plus a Mongo-backed LLM response cache.
