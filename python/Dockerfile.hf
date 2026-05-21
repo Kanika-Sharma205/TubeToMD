@@ -1,40 +1,39 @@
 # ──────────────────────────────────────────────────────────────
-# TubeToMD Python Service — Production Dockerfile
+# TubeToMD Python Service — HuggingFace Spaces Dockerfile
 # ──────────────────────────────────────────────────────────────
-# Used by: docker-compose.prod.yml, HuggingFace Spaces
-# Features: Slim image, ffmpeg installed, dynamic PORT
+# Deploy as standalone HF Space (Docker SDK, port 7860)
 #
-# Supports dynamic PORT via environment variable:
-#   - docker-compose.prod.yml → PORT=8000
-#   - HuggingFace Spaces      → PORT=7860
+# Setup:
+#   1. Create HF Space with Docker SDK
+#   2. Copy this file as "Dockerfile" in the Space repo
+#   3. Copy the python/ directory contents alongside it
+#   4. Set secrets in HF Space settings (see below)
+#
+# Required HF Space Secrets:
+#   GROQ_API_KEY
+#
+# Optional HF Space Secrets:
+#   MAX_FILE_SIZE_MB (default: 500)
 # ──────────────────────────────────────────────────────────────
 
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies (ffmpeg for audio processing)
-# Works on both Linux and Windows Docker (Linux containers)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Create uploads directory
 RUN mkdir -p /app/uploads
 
-# Install Python dependencies (cached layer)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
     rm -rf /root/.cache/pip
 
-# Copy source code
 COPY . .
 
-# Default port (overridden by env in compose/HF)
-ENV PORT=8000
+# HuggingFace requires port 7860
+ENV PORT=7860
+EXPOSE 7860
 
-# Expose both possible ports
-EXPOSE 8000 7860
-
-# Use shell form so $PORT is evaluated at runtime
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

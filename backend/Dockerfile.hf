@@ -1,15 +1,21 @@
 # ──────────────────────────────────────────────────────────────
-# TubeToMD Backend — Production Dockerfile
+# TubeToMD Backend — HuggingFace Spaces Dockerfile
 # ──────────────────────────────────────────────────────────────
-# Used by: docker-compose.prod.yml, HuggingFace Spaces
-# Features: Multi-stage build, production deps only, small image
+# Deploy as standalone HF Space (Docker SDK, port 7860)
 #
-# Supports dynamic PORT via environment variable:
-#   - docker-compose.prod.yml → PORT=3000
-#   - HuggingFace Spaces      → PORT=7860
+# Setup:
+#   1. Create HF Space with Docker SDK
+#   2. Copy this file as "Dockerfile" in the Space repo
+#   3. Copy the backend/ directory contents alongside it
+#   4. Set secrets in HF Space settings (see below)
+#
+# Required HF Space Secrets:
+#   MONGODB_URI, JWT_SECRET, JWT_REFRESH_SECRET,
+#   NVIDIA_API_KEY, NVIDIA_API_KEYS (optional),
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+#   ADMIN_API_TOKEN, PYTHON_SERVICE_URL, FRONTEND_URL
 # ──────────────────────────────────────────────────────────────
 
-# ── Build Stage ───────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -20,25 +26,19 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# ── Production Stage ──────────────────────────────────────────
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Create uploads directory (cross-platform safe)
 RUN mkdir -p /app/uploads
 
-# Install production dependencies only
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built code from builder
 COPY --from=builder /app/dist ./dist
 
-# Default port (overridden by env in compose/HF)
-ENV PORT=3000
-
-# Expose both possible ports
-EXPOSE 3000 7860
+# HuggingFace requires port 7860
+ENV PORT=7860
+EXPOSE 7860
 
 CMD ["node", "dist/index.js"]
